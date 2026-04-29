@@ -28,7 +28,7 @@ export async function POST_SEND_OTP(request: NextRequest): Promise<NextResponse>
   // await sendSMS(mobile, `Your CureBharat OTP is: ${otp}. Valid for 5 minutes.`);
   console.log(`OTP for ${mobile}: ${otp}`); // DEV ONLY — remove in production
 
-  return NextResponse.json({ success: true, message: 'OTP sent successfully' });
+  return NextResponse.json({ success: true, message: 'OTP sent successfully', otp });
 }
 
 /**

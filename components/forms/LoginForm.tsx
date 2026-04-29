@@ -20,7 +20,10 @@ export default function LoginForm() {
     setError('');
     setLoading(true);
     try {
-      await authAPI.sendOTP(mobile);
+      const res = await authAPI.sendOTP(mobile);
+      if (res.data.otp) {
+        alert(`Development OTP: ${res.data.otp}`);
+      }
       setStep('otp');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP');
