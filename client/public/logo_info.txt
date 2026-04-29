@@ -1,0 +1,2 @@
+Logo asset for CureBharat.
+Please replace logo.png in this folder with the provided high-resolution image.
