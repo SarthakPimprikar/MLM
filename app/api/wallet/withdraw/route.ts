@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../lib/db';
-import Wallet from '../../../models/Wallet';
-import { verifyAuth } from '../../../lib/authMiddleware';
+import { connectDB } from '../../../../lib/server/db';
+import Wallet from '../../../../models/Wallet';
+import { verifyAuth } from '../../../../lib/server/authMiddleware';
 
 /**
  * POST /api/wallet/withdraw
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   await connectDB();
 
-  const wallet = await Wallet.findOne({ userId: auth.user._id });
+  const wallet = await Wallet.findOne({ user: auth.user._id });
   if (!wallet) {
     return NextResponse.json({ success: false, message: 'Wallet not found' }, { status: 404 });
   }
@@ -38,10 +38,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     type: 'withdrawal',
     amount: -amount,
     description: `Withdrawal request of ₹${amount}`,
-    sourceUserId: auth.user._id,
+    sourceUserId: auth.user._id as any,
     status: 'final',
     cycleMonth,
-    createdAt: new Date(),
+    date: new Date(),
   });
 
   await wallet.save();

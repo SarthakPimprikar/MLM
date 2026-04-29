@@ -33,7 +33,7 @@ export async function GET(
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '50', 10);
 
-  const wallet = await Wallet.findOne({ userId: params.userId }).lean();
+  const wallet = await Wallet.findOne({ user: params.userId }).lean();
 
   if (!wallet) {
     return NextResponse.json({
@@ -50,7 +50,7 @@ export async function GET(
 
   // Paginate ledger entries
   const ledger = wallet.ledger
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice((page - 1) * limit, page * limit);
 
   return NextResponse.json({

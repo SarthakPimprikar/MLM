@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../lib/db';
-import EPin from '../../../models/EPin';
-import Plan from '../../../models/Plan';
-import { verifyAuth, requireRole } from '../../../lib/authMiddleware';
+import { connectDB } from '../../../../lib/server/db';
+import EPin from '../../../../models/EPin';
+import Plan from '../../../../models/Plan';
+import { verifyAuth, requireRole } from '../../../../lib/server/authMiddleware';
 
 /**
  * POST /api/epins/generate

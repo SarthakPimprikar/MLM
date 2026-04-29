@@ -6,13 +6,14 @@ export interface ILedgerEntry {
   description: string;
   cycleMonth: string;
   status: 'provisional' | 'final';
+  sourceUserId?: mongoose.Types.ObjectId;
   date: Date;
 }
 
 export interface IWallet extends Document {
   user: mongoose.Types.ObjectId;
-  provisionalBalance: number; // Balance for the current active cycle
-  finalBalance: number; // Balance from past cycles ready for withdrawal
+  provisionalBalance: number;
+  finalBalance: number;
   totalEarned: number;
   totalWithdrawn: number;
   ledger: ILedgerEntry[];
@@ -30,10 +31,15 @@ const WalletSchema: Schema = new Schema(
     ledger: [
       {
         amount: { type: Number, required: true },
-        type: { type: String, enum: ['direct', 'override', 'leadership', 'withdrawal', 'tds_deduction'], required: true },
+        type: { 
+          type: String, 
+          enum: ['direct', 'override', 'leadership', 'withdrawal', 'tds_deduction'], 
+          required: true 
+        },
         description: { type: String },
         cycleMonth: { type: String },
         status: { type: String, enum: ['provisional', 'final'], default: 'provisional' },
+        sourceUserId: { type: Schema.Types.ObjectId, ref: 'User' },
         date: { type: Date, default: Date.now },
       },
     ],

@@ -1,24 +1,17 @@
 import mongoose from 'mongoose';
 import { connectDB } from './db';
-import Sale from '../models/Sale';
-import User, { IUser } from '../models/User';
-import Wallet from '../models/Wallet';
+import Sale from '../../models/Sale';
+import User, { IUser } from '../../models/User';
+import Wallet from '../../models/Wallet';
 
-const HCC_DIRECT_RATE = 0.40;   // 40% of commissionableAmount → HCC
+const HCC_DIRECT_RATE = 0.40;   // 40% of businessVolume → HCC
 const HCM_OVERRIDE_RATE = 0.40;  // 40% of HCC income → HCM
 const HBA_OVERRIDE_RATE = 0.40;  // 40% of HCM income → HBA
-const SH_LEADERSHIP_RATE = 0.02; // 2%  of commissionableAmount → SH
+const SH_LEADERSHIP_RATE = 0.02; // 2%  of businessVolume → SH
 
 /**
  * Helper: Add a ledger entry and update wallet balance.
  * MUST be called sequentially — never in parallel — to avoid race conditions.
- *
- * @param userId - Wallet owner
- * @param amount - Amount to credit (provisional)
- * @param type   - Ledger entry type
- * @param description - Human-readable description
- * @param sourceUserId - The user whose sale triggered this commission
- * @param cycleMonth - Format: YYYY-MM
  */
 async function creditWallet(
   userId: mongoose.Types.ObjectId,
@@ -29,7 +22,7 @@ async function creditWallet(
   cycleMonth: string
 ): Promise<void> {
   await Wallet.findOneAndUpdate(
-    { userId },
+    { user: userId },
     {
       $inc: {
         provisionalBalance: amount,
@@ -43,7 +36,7 @@ async function creditWallet(
           sourceUserId,
           status: 'provisional',
           cycleMonth,
-          createdAt: new Date(),
+          date: new Date(),
         },
       },
     },
@@ -56,10 +49,10 @@ async function creditWallet(
  * Steps are intentionally sequential (no Promise.all) to prevent wallet race conditions.
  *
  * Commission flow:
- *   HCC   → 40% of commissionableAmount (direct)
+ *   HCC   → 40% of businessVolume (direct)
  *   HCM   → 40% of HCC income (override)  — only if active this month
  *   HBA   → 40% of HCM income (override)  — only if active this month
- *   SH    → 2%  of commissionableAmount  (leadership)
+ *   SH    → 2%  of businessVolume          (leadership)
  *
  * @param saleId - MongoDB ObjectId string of the Sale document
  */
@@ -74,39 +67,41 @@ export async function processCommission(saleId: string): Promise<void> {
     return;
   }
 
-  const { commissionableAmount, hccId, cycleMonth } = sale;
+  const commissionableAmount = sale.businessVolume;
+  const sellerId = sale.seller;
+  const cycleMonth = sale.cycleMonth;
 
   // 2. Find HCC who made the sale
-  const hcc = await User.findById(hccId).lean<IUser>();
-  if (!hcc) throw new Error(`HCC user not found: ${hccId.toString()}`);
+  const hcc = await User.findById(sellerId).lean<IUser>();
+  if (!hcc) throw new Error(`HCC user not found: ${sellerId.toString()}`);
 
   // 3. Calculate and credit HCC direct income
   const hccIncome = Math.round(commissionableAmount * HCC_DIRECT_RATE);
   await creditWallet(
-    hccId,
+    sellerId,
     hccIncome,
     'direct',
     `Direct commission for policy ${sale.policyId}`,
-    hccId,
+    sellerId,
     cycleMonth
   );
 
   // 4. Increment HCC personal sales count
   await User.updateOne(
-    { _id: hccId },
+    { _id: sellerId },
     {
       $inc: { personalSalesCount: 1, personalSalesThisMonth: 1 },
-      $set: { lastActiveDate: new Date() },
+      $set: { lastSaleDate: new Date() },
     }
   );
 
   // 5. Find HCM (HCC's referrer)
-  if (!hcc.referrerId) {
+  if (!hcc.referrer) {
     await Sale.updateOne({ _id: saleId }, { commissionProcessed: true });
     return;
   }
 
-  const hcm = await User.findById(hcc.referrerId).lean<IUser>();
+  const hcm = await User.findById(hcc.referrer).lean<IUser>();
   const hcmIsActive = hcm && hcm.personalSalesThisMonth >= 1;
 
   let hcmIncome = 0;
@@ -117,18 +112,18 @@ export async function processCommission(saleId: string): Promise<void> {
       hcmIncome,
       'override',
       `Override from HCC ${hcc.memberId} — policy ${sale.policyId}`,
-      hccId,
+      sellerId,
       cycleMonth
     );
   }
 
   // 6. Find HBA (HCM's referrer)
-  if (!hcm?.referrerId) {
+  if (!hcm?.referrer) {
     await Sale.updateOne({ _id: saleId }, { commissionProcessed: true });
     return;
   }
 
-  const hba = await User.findById(hcm.referrerId).lean<IUser>();
+  const hba = await User.findById(hcm.referrer).lean<IUser>();
   const hbaIsActive = hba && hba.personalSalesThisMonth >= 1;
 
   if (hba && hbaIsActive && hcmIncome > 0) {
@@ -138,14 +133,14 @@ export async function processCommission(saleId: string): Promise<void> {
       hbaIncome,
       'override',
       `Override from HCM ${hcm.memberId} — policy ${sale.policyId}`,
-      hccId,
+      sellerId,
       cycleMonth
     );
   }
 
   // 7. Find SH (HBA's referrer) — always gets 2% regardless of activity
-  if (hba?.referrerId) {
-    const sh = await User.findById(hba.referrerId).lean<IUser>();
+  if (hba?.referrer) {
+    const sh = await User.findById(hba.referrer).lean<IUser>();
     if (sh) {
       const shIncome = Math.round(commissionableAmount * SH_LEADERSHIP_RATE);
       await creditWallet(
@@ -153,7 +148,7 @@ export async function processCommission(saleId: string): Promise<void> {
         shIncome,
         'leadership',
         `2% state leadership from policy ${sale.policyId}`,
-        hccId,
+        sellerId,
         cycleMonth
       );
     }

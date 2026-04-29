@@ -1,5 +1,5 @@
 import { connectDB } from './db';
-import User from '../models/User';
+import User from '../../models/User';
 
 const HCC_TO_HCM_SALES = 12;
 const HCC_TO_HCM_TEAM = 12;

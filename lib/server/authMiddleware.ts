@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { connectDB } from './db';
-import Sale from '../../models/Sale';
 import User, { IUser, Role } from '../../models/User';
-import Wallet from '../../models/Wallet';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -106,6 +104,6 @@ export function generateToken(user: IUser): string {
       memberId: user.memberId,
     } as JwtPayload,
     JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: '7d' as any }
   );
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../lib/db';
-import EPin from '../../../models/EPin';
-import { verifyAuth } from '../../../lib/authMiddleware';
+import { connectDB } from '../../../../lib/server/db';
+import EPin from '../../../../models/EPin';
+import { verifyAuth } from '../../../../lib/server/authMiddleware';
 
 /**
  * POST /api/epins/burn
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   pin.status = 'used';
   pin.usedBy = auth.user._id;
-  pin.usedAt = new Date();
+  pin.usedDate = new Date();
   await pin.save();
 
   return NextResponse.json({

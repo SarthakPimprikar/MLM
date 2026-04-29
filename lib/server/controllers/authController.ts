@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { connectDB } from '../../../lib/db';
+import { connectDB } from '../db';
 import User from '../../../models/User';
-import { generateToken } from '../../../lib/authMiddleware';
+import EPin from '../../../models/EPin';
+import { generateToken } from '../authMiddleware';
 
 /** In-memory OTP store — replace with Redis in production */
 const otpStore = new Map<string, { otp: string; expiresAt: number }>();

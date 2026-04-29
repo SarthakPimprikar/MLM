@@ -1,5 +1,5 @@
 import { connectDB } from './db';
-import Wallet from '../models/Wallet';
+import Wallet from '../../models/Wallet';
 import { calculateTDS } from './tdsCalculator';
 
 /**
@@ -52,7 +52,7 @@ export async function runPayoutCycle(cycleMonth: string): Promise<{
           sourceUserId: undefined,
           status: 'final',
           cycleMonth,
-          createdAt: new Date(),
+          date: new Date(),
         });
       }
 

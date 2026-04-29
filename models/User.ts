@@ -1,12 +1,15 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export type Role = 'admin' | 'sh' | 'hba' | 'hcm' | 'hcc';
+export type Rank = 'HCC' | 'HCM' | 'HBA' | 'SH' | 'ADMIN';
+
 export interface IUser extends Document {
   name: string;
   mobile: string;
   email?: string;
   password?: string;
-  role: 'admin' | 'sh' | 'hba' | 'hcm' | 'hcc';
-  rank: 'HCC' | 'HCM' | 'HBA' | 'SH' | 'ADMIN';
+  role: Role;
+  rank: Rank;
   memberId: string; // Unique Member ID like CB-HCC-1001
   referrer?: mongoose.Types.ObjectId; // Who recruited this person
   state?: string;
@@ -16,6 +19,7 @@ export interface IUser extends Document {
   personalSalesThisMonth: number;
   teamSize: number;
   lastSaleDate?: Date;
+  joiningDate: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +41,7 @@ const UserSchema: Schema = new Schema(
     personalSalesThisMonth: { type: Number, default: 0 },
     teamSize: { type: Number, default: 0 },
     lastSaleDate: { type: Date },
+    joiningDate: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

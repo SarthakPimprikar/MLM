@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { runMonthlyActivityCheck } from '../../../lib/activityCheck';
+import { runMonthlyActivityCheck } from '../../../../lib/server/activityCheck';
 
 /**
  * GET /api/cron/activity-check

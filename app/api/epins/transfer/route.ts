@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../lib/db';
-import EPin from '../../../models/EPin';
-import { verifyAuth } from '../../../lib/authMiddleware';
+import { connectDB } from '../../../../lib/server/db';
+import EPin from '../../../../models/EPin';
+import { verifyAuth } from '../../../../lib/server/authMiddleware';
 
 /**
  * POST /api/epins/transfer

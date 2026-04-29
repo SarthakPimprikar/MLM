@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../lib/db';
-import User from '../../../models/User';
-import { verifyAuth, requireRole } from '../../../lib/authMiddleware';
+import { connectDB } from '../../../../lib/server/db';
+import User from '../../../../models/User';
+import { verifyAuth, requireRole } from '../../../../lib/server/authMiddleware';
 
 interface RouteParams {
   params: { id: string };

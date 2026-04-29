@@ -3,16 +3,17 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IEPin extends Document {
   pinCode: string;
   value: number;
-  plan: mongoose.Types.ObjectId;
-  owner: mongoose.Types.ObjectId;
-  status: 'unused' | 'used' | 'transferred' | 'expired';
-  usedBy?: mongoose.Types.ObjectId; // The user who was registered/upgraded using this pin
-  transferHistory: {
-    from: mongoose.Types.ObjectId;
-    to: mongoose.Types.ObjectId;
-    date: Date;
-  }[];
+  planId: mongoose.Types.ObjectId;
+  generatedBy: mongoose.Types.ObjectId;
+  currentOwnerId: mongoose.Types.ObjectId;
+  status: 'unused' | 'used' | 'transferred' | 'blocked';
+  usedBy?: mongoose.Types.ObjectId;
   usedDate?: Date;
+  transferHistory: {
+    fromUserId: mongoose.Types.ObjectId;
+    toUserId: mongoose.Types.ObjectId;
+    transferredAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,18 +22,23 @@ const EPinSchema: Schema = new Schema(
   {
     pinCode: { type: String, unique: true, required: true },
     value: { type: Number, required: true },
-    plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
-    owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    status: { type: String, enum: ['unused', 'used', 'transferred', 'expired'], default: 'unused' },
+    planId: { type: Schema.Types.ObjectId, ref: 'Plan', required: true },
+    generatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    currentOwnerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    status: { 
+      type: String, 
+      enum: ['unused', 'used', 'transferred', 'blocked'], 
+      default: 'unused' 
+    },
     usedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    usedDate: { type: Date },
     transferHistory: [
       {
-        from: { type: Schema.Types.ObjectId, ref: 'User' },
-        to: { type: Schema.Types.ObjectId, ref: 'User' },
-        date: { type: Date, default: Date.now },
+        fromUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+        toUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+        transferredAt: { type: Date, default: Date.now },
       },
     ],
-    usedDate: { type: Date },
   },
   { timestamps: true }
 );

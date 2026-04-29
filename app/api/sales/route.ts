@@ -42,13 +42,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const sale = await Sale.create({
     policyId,
-    hccId: auth.user._id,
-    customerId: `CUST-${Date.now()}`,
+    seller: auth.user._id,
     customerName,
     customerMobile,
-    planId,
-    saleAmount: plan.price,
-    commissionableAmount: plan.isCommissionable ? plan.businessVolume : 0,
+    plan: planId,
+    amount: plan.price,
+    businessVolume: plan.isCommissionable ? plan.businessVolume : 0,
     status: 'confirmed',
     cycleMonth,
     saleDate: new Date(),
@@ -87,15 +86,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // HCC only sees their own sales
   if (auth.user.role === 'hcc') {
-    filter.hccId = auth.user._id;
+    filter.seller = auth.user._id;
   }
 
   if (cycleMonth) filter.cycleMonth = cycleMonth;
 
   const [sales, total] = await Promise.all([
     Sale.find(filter)
-      .populate('planId', 'name price')
-      .populate('hccId', 'name memberId')
+      .populate('plan', 'name price')
+      .populate('seller', 'name memberId')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)

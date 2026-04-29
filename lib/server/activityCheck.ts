@@ -1,5 +1,5 @@
 import { connectDB } from './db';
-import User from '../models/User';
+import User from '../../models/User';
 
 /**
  * Monthly activity check — runs on the 1st of every month via cron.
