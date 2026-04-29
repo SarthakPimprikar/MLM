@@ -3,10 +3,8 @@ import bcrypt from 'bcryptjs';
 import { connectDB } from '../db';
 import User from '../../../models/User';
 import EPin from '../../../models/EPin';
+import Otp from '../../../models/Otp';
 import { generateToken } from '../authMiddleware';
-
-/** In-memory OTP store — replace with Redis in production */
-const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 
 /**
  * POST /api/auth/send-otp
@@ -22,7 +20,13 @@ export async function POST_SEND_OTP(request: NextRequest): Promise<NextResponse>
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  otpStore.set(mobile, { otp, expiresAt: Date.now() + 5 * 60 * 1000 }); // 5 min
+  await connectDB();
+  
+  await Otp.findOneAndUpdate(
+    { mobile },
+    { otp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
+    { upsert: true, new: true }
+  );
 
   // TODO: Send via SMS gateway
   // await sendSMS(mobile, `Your CureBharat OTP is: ${otp}. Valid for 5 minutes.`);
@@ -38,15 +42,17 @@ export async function POST_SEND_OTP(request: NextRequest): Promise<NextResponse>
 export async function POST_VERIFY_OTP(request: NextRequest): Promise<NextResponse> {
   const { mobile, otp } = await request.json();
 
-  const record = otpStore.get(mobile);
-  if (!record || record.otp !== otp || Date.now() > record.expiresAt) {
+  await connectDB();
+  const record = await Otp.findOne({ mobile }).lean();
+  
+  if (!record || record.otp !== otp || new Date() > new Date(record.expiresAt)) {
     return NextResponse.json(
       { success: false, message: 'Invalid or expired OTP' },
       { status: 400 }
     );
   }
 
-  otpStore.delete(mobile);
+  await Otp.deleteOne({ mobile });
 
   await connectDB();
   const user = await User.findOne({ mobile }).lean();
